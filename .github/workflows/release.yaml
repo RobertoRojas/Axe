@@ -5,6 +5,10 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+  packages: write
+
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -12,17 +16,24 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+
+      - name: Get the tag name
+        id: get_tag_name
+        run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
       
       - name: Build 
         run: |
-          echo '{"version":"${GITHUB_REF#refs/tags/"}' > templates/metadata.json;
-          bazel build //:axe;
+          echo '{"version":"${{ env.TAG_NAME }}"}' > templates/metadata.json;
+          bazel build //:axe --config=release;
+          cp bazel-bin/axe axe;
+          chmod +x axe;
 
       - name: Create Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release create ${{ env.TAG_NAME }} \
+            --title "Release ${{ env.TAG_NAME }}" \
             --generate-notes \
             --draft=false \
             --prerelease=false
@@ -30,7 +41,4 @@ jobs:
       - name: Upload Release Asset
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release upload ${{ env.TAG_NAME }} bazel-bin/axe \
-            --name "axe" \
-            --clobber
+        run: gh release upload ${{ env.TAG_NAME }} axe
