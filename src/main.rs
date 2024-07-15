@@ -6,27 +6,82 @@ use config::VERSION;
 #[cfg(debug_assertions)]
 pub const VERSION: &str = "v0.0.0-debug";
 
+use std::fs::File;
+use std::io::{self, Read, Write};
 use std::path::Path;
 use std::process;
 
-fn writeFile(file: &str, data: &[u8]) {
-
+fn write_file_bytes(path: &str, bytes: &[u8]) -> io::Result<()> {
+    let mut file: File = File::create(path)?;
+    file.write_all(bytes)?;
+    Ok(())
 }
 
-fn readFile(file: &str) {
-
+fn read_file_bytes(path: &str) -> io::Result<Vec<u8>> {
+    let mut file: File = File::open(path)?;
+    let mut buffer: Vec<u8> = Vec::new();
+    file.read_to_end(&mut buffer)?;
+    Ok(buffer)
 }
 
-fn join(file: &str, count: u8) {
+fn write_segment(file_name: &str, bytes: &[u8], index: usize, width: usize) {
+    let output_file_name = format!("{}.{:0width$}.axe", file_name, index, width = width);
+    match write_file_bytes(&output_file_name, &bytes) {
+        Ok(_) => println!("Section: {} ", output_file_name),
+        Err(e) => {
+            eprintln!("Error: Cannot create the file: {}", e);
+            process::exit(1);
+        }
+    }
+}
 
+fn cut(file: &str, count: usize) {
+    let bytes: Vec<u8>;
+    match read_file_bytes(file) {
+        Ok(bs) => bytes = bs,
+        Err(e) => {
+            eprintln!("Error: Cannot read the file: {}", e);
+            process::exit(1);
+        }
+    }
+    let segment_size: usize = bytes.len() / count;
+    let file_name: &str = Path::new(file).file_name().unwrap().to_str().unwrap();
+    let mut start: usize = 0;
+    let mut end: usize = segment_size;
+    let width: usize = (count).to_string().len();
+    for i in 0..(count - 1) {
+        write_segment(file_name, &bytes[start..end], i + 1, width);
+        start = end;
+        end = start + segment_size;
+    }
+    end = bytes.len();
+    write_segment(file_name, &bytes[start..end], count, width);
 }
 
 fn meld(files: Vec<&str>, output: &str) {
-
+    let mut meld_content: Vec<u8> = Vec::new();
+    for file in files.iter() {
+        let mut bytes: Vec<u8>;
+        match read_file_bytes(file) {
+            Ok(bs) => bytes = bs,
+            Err(e) => {
+                eprintln!("Error: Cannot read the file: {}", e);
+                process::exit(1);
+            }
+        }
+        meld_content.append(&mut bytes);
+    }
+    match write_file_bytes(&output, &meld_content) {
+        Ok(_) => println!("Melded file: {} ", output),
+        Err(e) => {
+            eprintln!("Error: Cannot create the file: {}", e);
+            process::exit(1);
+        }
+    }
 }
 
 fn main() {
-    let mut app = App::new("Axe")
+    let mut app: App = App::new("Axe")
         .version(VERSION)
         .author("Roberto Rojas")
         .about("Axe is a command-line interface (CLI) tool that enables users to cut files into sections and subsequently meld them into a single file.")
@@ -54,7 +109,7 @@ fn main() {
                 .takes_value(true)
                 .default_value("2")
                 .validator(|v| {
-                    v.parse::<u8>()
+                    v.parse::<usize>()
                         .map_err(|_| String::from("The count must be a valid integer."))
                         .and_then(|val| {
                             if val < 2 {
@@ -93,30 +148,30 @@ fn main() {
 
     match matches.subcommand() {
         Some(("CUT", cut_matches)) => {
-            let file = cut_matches.value_of("file").unwrap();
-            let count: u8 = cut_matches.value_of("count").unwrap_or("2").parse().expect("Count must be a number");
+            let file: &str = cut_matches.value_of("file").unwrap();
+            let count: usize = cut_matches.value_of("count").unwrap_or("2").parse().expect("Count must be a number");
             if !Path::new(file).exists(){
-                eprint!("Error: The file[{}] doesn't exist.\n", file);
+                eprintln!("Error: The file[{}] doesn't exist.", file);
                 process::exit(1);
             } else if !Path::new(file).is_file() {
-                eprint!("Error: The path[{}] is not a file.\n", file);
+                eprintln!("Error: The path[{}] is not a file.", file);
                 process::exit(1);
             }
-            join(file, count);
+            cut(file, count);
         }
         Some(("MELD", meld_matches)) => {
             let files: Vec<&str> = meld_matches.values_of("files").unwrap().collect();
-            let output = meld_matches.value_of("output").unwrap_or("output.txt");
+            let output: &str = meld_matches.value_of("output").unwrap_or("output.txt");
             if files.len() < 2 {
-                eprint!("Error: You must send at least to files to meld.\n");
+                eprintln!("Error: You must send at least to files to meld.");
                 process::exit(1);
             }
             for file in files.iter() {
                 if !Path::new(file).exists(){
-                    eprint!("Error: The file[{}] doesn't exist.\n", file);
+                    eprintln!("Error: The file[{}] doesn't exist.", file);
                     process::exit(1);
                 } else if !Path::new(file).is_file() {
-                    eprint!("Error: The path[{}] is not a file.\n", file);
+                    eprintln!("Error: The path[{}] is not a file.", file);
                     process::exit(1);
                 }
             }
