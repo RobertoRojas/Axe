@@ -26,7 +26,6 @@ jobs:
           echo '{"version":"${{ env.TAG_NAME }}"}' > templates/metadata.json;
           bazel build //:axe --config=release;
           cp bazel-bin/axe axe;
-          chmod +x axe;
 
       - name: Create Release
         env:
