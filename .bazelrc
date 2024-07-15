@@ -1,0 +1,7 @@
+# Build configs
+build --config=debug
+build:debug --define optimization=none
+build:release --define optimization=high
+
+# Run configs
+run --run_under="cd $BUILD_WORKING_DIRECTORY &&"

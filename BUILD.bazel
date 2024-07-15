@@ -1,0 +1,75 @@
+load("@app_deps//:defs.bzl", "aliases", "all_crate_deps")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library")
+load("@textforge//:defs.bzl", "generate_files")
+
+config_setting(
+    name = "opt-level",
+    values = {
+        "define": "optimization=none",
+    },
+)
+
+config_setting(
+    name = "opt-level-low",
+    values = {
+        "define": "optimization=low",
+    },
+)
+
+config_setting(
+    name = "opt-level-mid",
+    values = {
+        "define": "optimization=mid",
+    },
+)
+
+config_setting(
+    name = "opt-level-high",
+    values = {
+        "define": "optimization=high",
+    },
+)
+
+filegroup(
+    name = "config_template",
+    srcs = ["templates/config.rs.jinja"],
+    visibility = ["//visibility:private"],
+)
+
+generate_files(
+    name = "config_gen",
+    srcs = [
+        ":config_template"
+    ],
+    datafile = 'templates/metadata.json',
+    visibility = ["//visibility:public"],
+)
+
+rust_library(
+    name = "config",
+    srcs = [":config_gen"],
+    crate_features = ["default"],
+    rustc_flags = ["--cap-lints=allow"],
+)
+
+rust_binary(
+    name = "axe",
+    srcs = glob(["src/*.rs"]),
+    aliases = aliases(),
+    proc_macro_deps = all_crate_deps(
+        proc_macro = True,
+    ),
+    deps = all_crate_deps(
+        normal = True,
+    ) + [":config"],
+    rustc_flags = [
+        "--cap-lints=allow",
+        "--codegen",
+    ] + select({
+        ":opt-level": ["opt-level=0"],
+        ":opt-level-low": ["opt-level=1"],
+        ":opt-level-mid": ["opt-level=3"],
+        ":opt-level-high": ["opt-level=s"],
+        "//conditions:default": ["opt-level=0"],
+    }),
+)
