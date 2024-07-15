@@ -25,3 +25,6 @@ bazel-*
 # Axe
 
 metadata.json
+tests/*
+!tests/file.txt
+!tests/tests.sh
