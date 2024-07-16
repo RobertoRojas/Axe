@@ -1,3 +1,6 @@
+"""
+This build file will build all the code of axe, use //:axe to build the application.
+"""
 load("@app_deps//:defs.bzl", "aliases", "all_crate_deps")
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library")
 load("@textforge//:defs.bzl", "generate_files")
