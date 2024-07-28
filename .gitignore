@@ -22,4 +22,5 @@ bazel-*
 
 tests/*
 !tests/file.txt
-!tests/tests.sh
+!tests/cut_count_tests.sh
+!tests/cut_segments_tests.sh
