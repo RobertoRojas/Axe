@@ -40,7 +40,7 @@ sha256sum test.txt;
 sha256sum test_axe.txt;
 ```
 
-[![asciicast](https://asciinema.org/a/O0KR9SpOWMAlFoHmse2kY7ANU.svg)](https://asciinema.org/a/O0KR9SpOWMAlFoHmse2kY7ANU)
+[![asciicast](https://asciinema.org/a/tvsexjCsE0wQoV7GAW4fPimvC.svg)](https://asciinema.org/a/tvsexjCsE0wQoV7GAW4fPimvC)
 
 ```Bash
 ls;
@@ -54,7 +54,7 @@ sha256sum test.txt;
 sha256sum test_axe.txt;
 ```
 
-[![asciicast](https://asciinema.org/a/1HLnuZkNAiJ05HAnikzxquqFC.svg)](https://asciinema.org/a/1HLnuZkNAiJ05HAnikzxquqFC) <- TODO
+[![asciicast](https://asciinema.org/a/1HLnuZkNAiJ05HAnikzxquqFC.svg)](https://asciinema.org/a/1HLnuZkNAiJ05HAnikzxquqFC)
 
 ### License
 
