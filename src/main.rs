@@ -35,7 +35,36 @@ fn write_segment(file_name: &str, bytes: &[u8], index: usize, width: usize) {
     }
 }
 
-fn cut(file: &str, count: usize) {
+fn cut_segments(file: &str, segments: Vec<usize>) {
+    let bytes: Vec<u8>;
+    match read_file_bytes(file) {
+        Ok(bs) => bytes = bs,
+        Err(e) => {
+            eprintln!("Error: Cannot read the file: {}", e);
+            process::exit(1);
+        }
+    }
+    let segments_total: usize = segments.iter().sum();
+    if segments_total > bytes.len() {
+        eprintln!("Error: The size of the file is less than the expected segments: {} < {}", bytes.len(), segments_total);
+        process::exit(1);
+    }
+    let file_name: &str = Path::new(file).file_name().unwrap().to_str().unwrap();
+    let mut start: usize = 0;
+    let mut end: usize = bytes.len();
+    let width: usize = (segments.len() + 1).to_string().len();
+    for (i, value) in segments.iter().enumerate() {
+        end = *value + start;
+        write_segment(file_name, &bytes[start..end], i + 1, width);
+        start = end;
+    }
+    if segments_total < bytes.len() {
+        end = bytes.len();
+        write_segment(file_name, &bytes[start..end], segments.len() + 1, width);
+    }
+}
+
+fn cut_count(file: &str, count: usize) {
     let bytes: Vec<u8>;
     match read_file_bytes(file) {
         Ok(bs) => bytes = bs,
@@ -101,6 +130,8 @@ fn main() {
                         Ok(())
                     }
                 }))
+            .group(clap::ArgGroup::with_name("cut_options")
+                .args(&["count", "segments"]))
             .arg(Arg::with_name("count")
                 .short('c')
                 .long("count")
@@ -114,6 +145,27 @@ fn main() {
                         .and_then(|val| {
                             if val < 2 {
                                 Err(String::from("The count must be at least 2."))
+                            } else {
+                                Ok(())
+                            }
+                        })
+                }))
+            .arg(Arg::with_name("segments")
+                .short('s')
+                .long("segments")
+                .value_name("SEGMENTS")
+                .help("Specifies the segments to split the file into, as a comma-separated list of byte positions.")
+                .takes_value(true)
+                .multiple(true)
+                .use_delimiter(true)
+                .validator(|v| {
+                    v.split(',')
+                        .map(|s| s.trim().parse::<usize>())
+                        .collect::<Result<Vec<_>, _>>()
+                        .map_err(|_| String::from("All segments must be valid integers."))
+                        .and_then(|segments| {
+                            if segments.is_empty() {
+                                Err(String::from("At least one segment must be specified."))
                             } else {
                                 Ok(())
                             }
@@ -150,6 +202,9 @@ fn main() {
         Some(("CUT", cut_matches)) => {
             let file: &str = cut_matches.value_of("file").unwrap();
             let count: usize = cut_matches.value_of("count").unwrap_or("2").parse().expect("Count must be a number");
+            let segments: Vec<usize> = cut_matches.values_of("segments")
+                .map(|values| values.filter_map(|v| v.parse::<usize>().ok()).collect())
+                .unwrap_or_else(Vec::new);
             if !Path::new(file).exists(){
                 eprintln!("Error: The file[{}] doesn't exist.", file);
                 process::exit(1);
@@ -157,13 +212,17 @@ fn main() {
                 eprintln!("Error: The path[{}] is not a file.", file);
                 process::exit(1);
             }
-            cut(file, count);
+            if segments.is_empty() {
+                cut_count(file, count);
+            } else {
+                cut_segments(file, segments);
+            }
         }
         Some(("MELD", meld_matches)) => {
             let files: Vec<&str> = meld_matches.values_of("files").unwrap().collect();
             let output: &str = meld_matches.value_of("output").unwrap_or("output.txt");
             if files.len() < 2 {
-                eprintln!("Error: You must send at least to files to meld.");
+                eprintln!("Error: You must send at least two files to meld.");
                 process::exit(1);
             }
             for file in files.iter() {

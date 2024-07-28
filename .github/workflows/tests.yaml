@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  tests:
+  cut_count_tests:
     runs-on: ubuntu-latest
 
     steps:
@@ -17,4 +17,17 @@ jobs:
         run: |
           bazel build //:axe;
           mv bazel-bin/axe ./tests;
-          ./tests/tests.sh;
+          ./tests/cut_count_tests.sh;
+
+  cut_segments_tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Run tests
+        run: |
+          bazel build //:axe;
+          mv bazel-bin/axe ./tests;
+          ./tests/cut_segments_tests.sh;

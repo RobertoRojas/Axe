@@ -14,6 +14,8 @@ Splits a file into a specified number of pieces.
 |:-:|:-:|:-:|:-:|
 |-f/--file|Path of the file to be cut|N/A|Yes|
 |-c/--count|Number of files to create|2|No|
+|-s/--segments|Number of segments to cut|N/A|No|
+**Note:** Only can select _count_ or _segments_ at the same time.
 
 ### MELD
 
@@ -24,7 +26,7 @@ Reassembles the pieces back into the original file.
 |-f/--files|Paths of the files to be melded|N/A|Yes|
 |-o/--output|Output path for the melded file|axe_output|No|
 
-## Example
+## Examples
 
 ```Bash
 ls;
@@ -38,7 +40,21 @@ sha256sum test.txt;
 sha256sum test_axe.txt;
 ```
 
-[![asciicast](https://asciinema.org/a/O0KR9SpOWMAlFoHmse2kY7ANU.svg)](https://asciinema.org/a/O0KR9SpOWMAlFoHmse2kY7ANU)
+[![asciicast](https://asciinema.org/a/tvsexjCsE0wQoV7GAW4fPimvC.svg)](https://asciinema.org/a/tvsexjCsE0wQoV7GAW4fPimvC)
+
+```Bash
+ls;
+echo $(python -c "print('a' + '0'*1000 + 'z')") > test.txt;
+cat test.txt;
+./axe CUT -f test.txt -s 10 -s 20 -s 30,40;
+ls -lh --block-size=1;
+./axe MELD -o test_axe.txt -f $(ls test.txt.*);
+cat test_axe.txt;
+sha256sum test.txt;
+sha256sum test_axe.txt;
+```
+
+[![asciicast](https://asciinema.org/a/1HLnuZkNAiJ05HAnikzxquqFC.svg)](https://asciinema.org/a/1HLnuZkNAiJ05HAnikzxquqFC)
 
 ### License
 
