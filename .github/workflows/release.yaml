@@ -21,14 +21,20 @@ jobs:
         id: get_tag_name
         run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
       
+      - name: Generate metadata
+        run: echo '{"version":"${{ env.TAG_NAME }}"}' > templates/metadata.json;
+
       - name: Build 
-        run: |
-          echo '{"version":"${{ env.TAG_NAME }}"}' > templates/metadata.json;
-          bazel build //:axe --config=release;
-          cp bazel-bin/axe axe;
+        run: bazel build //:axe --config=release;
+
+      - name: Copy file to root
+        run: cp bazel-bin/axe axe;
 
       - name: Set executable permissions
         run: chmod +x axe
+
+      - name: Create tar.gz archive
+        run: tar -czvf axe.tar.gz axe
 
       - name: Create Release
         env:
@@ -43,4 +49,4 @@ jobs:
       - name: Upload Release Asset
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload ${{ env.TAG_NAME }} axe
+        run: gh release upload ${{ env.TAG_NAME }} axe.tar.gz
