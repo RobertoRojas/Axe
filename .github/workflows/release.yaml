@@ -27,6 +27,9 @@ jobs:
           bazel build //:axe --config=release;
           cp bazel-bin/axe axe;
 
+      - name: Set executable permissions
+        run: chmod +x axe
+
       - name: Create Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
