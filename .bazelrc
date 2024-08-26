@@ -4,4 +4,4 @@ build:debug --define optimization=none
 build:release --define optimization=high
 
 # Run configs
-run --run_under="cd $BUILD_WORKING_DIRECTORY &&"
+run --run_under="cd $BUILD_WORKSPACE_DIRECTORY &&"
